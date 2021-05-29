@@ -2,6 +2,7 @@ package com.example.firestorekotlin
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.lang.Exception
+import java.lang.StringBuilder
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,8 +32,30 @@ class MainActivity : AppCompatActivity() {
             val person = Person(firstname,lastname,age)
             savePerson(person)
         }
+        btnRetrieveData.setOnClickListener {
+            retrieveData()
+        }
     }
 
+    private fun retrieveData()=CoroutineScope(IO).launch {
+        try {
+            val querySnapshot = ref.get().await()
+            val sb = StringBuilder()
+            for(document in querySnapshot.documents){
+                val person = document.toObject(Person::class.java)
+                sb.append("$person\n")
+            }
+            withContext(Dispatchers.Main){
+                data_display.text = sb.toString()
+            }
+        }catch(e: Exception){
+            withContext(Dispatchers.Main){
+                Log.e("info",e.toString())
+                Toast.makeText(this@MainActivity,e.toString(),Toast.LENGTH_LONG).show()
+            }
+        }
+
+    }
     private fun savePerson(person: Person) = CoroutineScope(IO).launch {
         try {
             ref.add(person).await()
